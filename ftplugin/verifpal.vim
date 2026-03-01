@@ -22,9 +22,10 @@ setlocal noexpandtab
 " Folding on bracket blocks (principal [...], queries [...])
 setlocal foldmethod=marker
 setlocal foldmarker=[,]
+setlocal foldlevel=99
 
 " Match brackets
 setlocal matchpairs+=[:],(:)
 
 " Undo buffer-local settings when filetype changes
-let b:undo_ftplugin = "setlocal commentstring< comments< tabstop< shiftwidth< expandtab< foldmethod< foldmarker< matchpairs<"
+let b:undo_ftplugin = "setlocal commentstring< comments< tabstop< shiftwidth< expandtab< foldmethod< foldmarker< foldlevel< matchpairs<"
