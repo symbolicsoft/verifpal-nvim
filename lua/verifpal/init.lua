@@ -100,13 +100,13 @@ function M.verify()
 		end
 	end
 
-	-- Run verifpal verify --result-code (stdout = result code, stderr = analysis log)
+	-- Run verifpal verify --result-code (result code is the last line of stdout)
 	local out = vim.system({ M.path, "verify", "--result-code", file }):wait()
 	if out.code ~= 0 then
-		vim.notify("Verifpal: verification failed:\n" .. (out.stderr or ""), vim.log.levels.ERROR)
+		vim.notify("Verifpal: verification failed:\n" .. (out.stdout or ""), vim.log.levels.ERROR)
 		return
 	end
-	local code = (out.stdout or ""):match("^%s*(.-)%s*$") -- trim whitespace
+	local code = (out.stdout or ""):match("([%a%d]+)%s*$") -- extract last line (the result code)
 
 	-- Parse result code: pairs of (type_char, result_char)
 	local results = {}
