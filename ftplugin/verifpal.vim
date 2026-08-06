@@ -10,9 +10,10 @@ if exists("b:did_ftplugin")
 endif
 let b:did_ftplugin = 1
 
-" Comments
+" Comments. Verifpal accepts both // line comments and /* */ block comments,
+" and preserves either when formatting.
 setlocal commentstring=//\ %s
-setlocal comments=://
+setlocal comments=s1:/*,mb:*,ex:*/,://
 
 " Indentation
 setlocal tabstop=4

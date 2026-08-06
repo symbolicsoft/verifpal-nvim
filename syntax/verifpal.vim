@@ -13,7 +13,8 @@ endif
 " Comments
 " ---------------------------------------------------------------------------
 
-syn match verifpalComment "//.*$" contains=@Spell
+syn match  verifpalComment "//.*$" contains=@Spell
+syn region verifpalComment start="/\*" end="\*/" contains=@Spell
 
 " ---------------------------------------------------------------------------
 " Block structure keywords
@@ -47,7 +48,20 @@ syn keyword verifpalQuery       confidentiality authentication freshness
 syn keyword verifpalQuery       unlinkability equivalence precondition
 
 " ---------------------------------------------------------------------------
-" Cryptographic primitives (21 built-in)
+" Declared weakening assumptions, e.g. SIGN[forgeable](sk, m) or
+" AEAD_ENC[weak from phase 2](k, m, ad). `from` is matched only when it
+" follows a capability: it is a contextual keyword, not a reserved word, so a
+" model may still use it as a constant name.
+" ---------------------------------------------------------------------------
+
+" `from` is matched by what FOLLOWS it rather than what precedes it: the rule
+" above consumes the capability word, and Vim resumes scanning after a match,
+" so a rule anchored on the capability could never fire.
+syn keyword verifpalCapability  weak forgeable malleable
+syn match   verifpalCapability  "\<from\>\ze\s\+phase\>"
+
+" ---------------------------------------------------------------------------
+" Cryptographic primitives (25 built-in)
 " ---------------------------------------------------------------------------
 
 syn keyword verifpalPrimitive   ASSERT CONCAT SPLIT
@@ -99,6 +113,7 @@ hi def link verifpalMode        Constant
 hi def link verifpalDeclaration Keyword
 hi def link verifpalQualifier   Type
 hi def link verifpalQuery       Keyword
+hi def link verifpalCapability  Exception
 hi def link verifpalPrimitive   Function
 hi def link verifpalSpecial     Constant
 hi def link verifpalOperator    Operator

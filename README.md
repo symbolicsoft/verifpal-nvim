@@ -38,20 +38,23 @@ use {
 
 Run `:VerifpalVerify` to analyze the current model. Results appear as Neovim diagnostics on each query line — failed queries show as errors in the sign column, passing queries as info.
 
+If the model declares any weakening assumptions (`SIGN[forgeable]`, `PUBKEY[weak from phase 1]`), they are listed in the summary notification. An attack found under a declared assumption is genuine only under that assumption, and a passing result is conditional on it, so neither is reported as unconditional.
+
 ### Formatting
 
 Run `:VerifpalFormat` to reformat the current buffer using `verifpal pretty`.
 
 ### Hover Documentation
 
-Press `K` over any primitive, query type, or keyword to see contextual documentation in a floating window. Covers all 21 cryptographic primitives, 5 query types, and language keywords.
+Press `K` over any primitive, query type, weakening assumption, or keyword to see contextual documentation in a floating window. Covers all 25 cryptographic primitives, 5 query types, the `weak`, `forgeable` and `malleable` assumptions, and language keywords.
 
 ### Syntax Highlighting
 
-Full highlighting for block keywords (`principal`, `phase`, `queries`, `attacker`), attacker modes (`active`, `passive`), declarations (`knows`, `generates`, `leaks`), qualifiers (`public`, `private`, `password`), query types (`confidentiality`, `authentication`, `freshness`, `unlinkability`, `equivalence`, `precondition`), all 25 primitives (`AEAD_ENC`, `AEAD_DEC`, `ENC`, `DEC`, `SIGN`, `SIGNVERIF`, `HASH`, `HKDF`, `PKE_ENC`, `PKE_DEC`, `PUBKEY`, `DH_KEX`, `KEM_ENCAP`, `KEM_DECAP`, `SHAMIR_SPLIT`, `SHAMIR_JOIN`, `RINGSIGN`, `RINGSIGNVERIF`, `BLIND`, `UNBLIND`, `MAC`, `PW_HASH`, `ASSERT`, `CONCAT`, `SPLIT`), the special value `nil`, operators (`=`, `?`, `->`, `→`), and principal names, phase numbers, and delimiters.
+Full highlighting for block keywords (`principal`, `phase`, `queries`, `attacker`), attacker modes (`active`, `passive`), declarations (`knows`, `generates`, `leaks`), qualifiers (`public`, `private`, `password`), query types (`confidentiality`, `authentication`, `freshness`, `unlinkability`, `equivalence`, `precondition`), all 25 primitives (`AEAD_ENC`, `AEAD_DEC`, `ENC`, `DEC`, `SIGN`, `SIGNVERIF`, `HASH`, `HKDF`, `PKE_ENC`, `PKE_DEC`, `PUBKEY`, `DH_KEX`, `KEM_ENCAP`, `KEM_DECAP`, `SHAMIR_SPLIT`, `SHAMIR_JOIN`, `RINGSIGN`, `RINGSIGNVERIF`, `BLIND`, `UNBLIND`, `MAC`, `PW_HASH`, `ASSERT`, `CONCAT`, `SPLIT`), declared weakening assumptions (`weak`, `forgeable`, `malleable`, and `from` when it introduces a phase), the special value `nil`, operators (`=`, `?`, `->`, `→`), and principal names, phase numbers, and delimiters.
+
 ### Comment Support
 
-`commentstring` is set to `// %s` for `gc` (vim-commentary / Comment.nvim) and native comment toggling.
+`commentstring` is set to `// %s` for `gc` (vim-commentary / Comment.nvim) and native comment toggling. Both `//` line comments and `/* */` block comments are highlighted.
 
 ### Folding
 
