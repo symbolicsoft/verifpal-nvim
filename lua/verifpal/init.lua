@@ -214,13 +214,21 @@ local primitive_docs = {
 		sig = "DEC(key, ciphertext): plaintext",
 		doc = "Symmetric decryption. Undoes ENC when the key matches.",
 	},
+	PUBKEY = {
+		sig = "PUBKEY(private_key): public_key",
+		doc = "Derives the public key corresponding to a private key. Used for Diffie-Hellman, signatures, public-key encryption and ring signatures.",
+	},
+	DH_KEX = {
+		sig = "DH_KEX(public_key, private_key): shared_secret",
+		doc = "Diffie-Hellman key exchange. DH_KEX(PUBKEY(a), b) and DH_KEX(PUBKEY(b), a) are the same shared secret.",
+	},
 	MAC = {
 		sig = "MAC(key, message): tag",
 		doc = "Message authentication code. Produces a tag that can be verified by anyone who knows the key.",
 	},
 	SIGN = {
 		sig = "SIGN(private_key, message): signature",
-		doc = "Digital signature using a private key. Verified with SIGNVERIF using the corresponding public key G^private_key.",
+		doc = "Digital signature using a private key. Verified with SIGNVERIF using the corresponding public key PUBKEY(private_key).",
 	},
 	SIGNVERIF = {
 		sig = "SIGNVERIF(public_key, message, signature)?: nil",
@@ -228,7 +236,7 @@ local primitive_docs = {
 	},
 	PKE_ENC = {
 		sig = "PKE_ENC(public_key, plaintext): ciphertext",
-		doc = "Public-key encryption. Encrypts to a DH public key (G^sk). The holder of sk can decrypt.",
+		doc = "Public-key encryption. Encrypts to a public key PUBKEY(sk). The holder of sk can decrypt.",
 	},
 	PKE_DEC = {
 		sig = "PKE_DEC(private_key, ciphertext): plaintext",
@@ -312,15 +320,7 @@ function M.hover()
 		return
 	end
 
-	-- G and nil
-	if word == "G" then
-		vim.lsp.util.open_floating_preview(
-			{ "**G**", "", "The Diffie-Hellman generator. `G^a` is a DH public key; `G^a^b = G^b^a` by commutativity." },
-			"markdown",
-			{ focus = false }
-		)
-		return
-	end
+	-- nil
 	if word == "nil" then
 		vim.lsp.util.open_floating_preview(
 			{ "**nil**", "", "The null/empty value. Also used as the attacker's canonical known private key." },

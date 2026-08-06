@@ -57,19 +57,19 @@ syn keyword verifpalPrimitive   SIGN SIGNVERIF PKE_ENC PKE_DEC
 syn keyword verifpalPrimitive   SHAMIR_SPLIT SHAMIR_JOIN
 syn keyword verifpalPrimitive   RINGSIGN RINGSIGNVERIF
 syn keyword verifpalPrimitive   BLIND UNBLIND
+syn keyword verifpalPrimitive   PUBKEY DH_KEX
 
 " ---------------------------------------------------------------------------
 " Special values
 " ---------------------------------------------------------------------------
 
-syn keyword verifpalSpecial     G nil
+syn keyword verifpalSpecial     nil
 
 " ---------------------------------------------------------------------------
 " Operators and delimiters
 " ---------------------------------------------------------------------------
 
 syn match   verifpalOperator    "="
-syn match   verifpalOperator    "\^"
 syn match   verifpalOperator    "?"
 syn match   verifpalTransfer    "->"
 syn match   verifpalTransfer    "\u2192"

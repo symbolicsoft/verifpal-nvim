@@ -48,7 +48,7 @@ Press `K` over any primitive, query type, or keyword to see contextual documenta
 
 ### Syntax Highlighting
 
-Full highlighting for block keywords (`principal`, `phase`, `queries`, `attacker`), attacker modes (`active`, `passive`), declarations (`knows`, `generates`, `leaks`), qualifiers (`public`, `private`, `password`), query types (`confidentiality`, `authentication`, `freshness`, `unlinkability`, `equivalence`, `precondition`), all 21 primitives (`AEAD_ENC`, `AEAD_DEC`, `ENC`, `DEC`, `SIGN`, `SIGNVERIF`, `HASH`, `HKDF`, `PKE_ENC`, `PKE_DEC`, `SHAMIR_SPLIT`, `SHAMIR_JOIN`, `RINGSIGN`, `RINGSIGNVERIF`, `BLIND`, `UNBLIND`, `MAC`, `PW_HASH`, `ASSERT`, `CONCAT`, `SPLIT`), special values (`G`, `nil`), operators (`=`, `^`, `?`, `->`, `→`), and principal names, phase numbers, and delimiters.
+Full highlighting for block keywords (`principal`, `phase`, `queries`, `attacker`), attacker modes (`active`, `passive`), declarations (`knows`, `generates`, `leaks`), qualifiers (`public`, `private`, `password`), query types (`confidentiality`, `authentication`, `freshness`, `unlinkability`, `equivalence`, `precondition`), all 23 primitives (`AEAD_ENC`, `AEAD_DEC`, `ENC`, `DEC`, `SIGN`, `SIGNVERIF`, `HASH`, `HKDF`, `PKE_ENC`, `PKE_DEC`, `PUBKEY`, `DH_KEX`, `SHAMIR_SPLIT`, `SHAMIR_JOIN`, `RINGSIGN`, `RINGSIGNVERIF`, `BLIND`, `UNBLIND`, `MAC`, `PW_HASH`, `ASSERT`, `CONCAT`, `SPLIT`), the special value `nil`, operators (`=`, `?`, `->`, `→`), and principal names, phase numbers, and delimiters.
 ### Comment Support
 
 `commentstring` is set to `// %s` for `gc` (vim-commentary / Comment.nvim) and native comment toggling.
