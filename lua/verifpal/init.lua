@@ -222,6 +222,14 @@ local primitive_docs = {
 		sig = "DH_KEX(public_key, private_key): shared_secret",
 		doc = "Diffie-Hellman key exchange. DH_KEX(PUBKEY(a), b) and DH_KEX(PUBKEY(b), a) are the same shared secret.",
 	},
+	KEM_ENCAP = {
+		sig = "KEM_ENCAP(encapsulation_key, randomness): shared_secret, ciphertext",
+		doc = "Key encapsulation, for post-quantum KEMs such as ML-KEM. Produces two outputs: the shared secret and the ciphertext carrying it. The randomness must be a fresh value declared with `generates`, since reusing it reproduces the same shared secret.",
+	},
+	KEM_DECAP = {
+		sig = "KEM_DECAP(decapsulation_key, ciphertext): shared_secret",
+		doc = "Key decapsulation. Recovers the shared secret produced by KEM_ENCAP(PUBKEY(dk), r). Cannot be given a public key in its first position. Check it with `?` to model a KEM with explicit rejection.",
+	},
 	MAC = {
 		sig = "MAC(key, message): tag",
 		doc = "Message authentication code. Produces a tag that can be verified by anyone who knows the key.",

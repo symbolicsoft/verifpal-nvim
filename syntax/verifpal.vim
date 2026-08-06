@@ -58,6 +58,7 @@ syn keyword verifpalPrimitive   SHAMIR_SPLIT SHAMIR_JOIN
 syn keyword verifpalPrimitive   RINGSIGN RINGSIGNVERIF
 syn keyword verifpalPrimitive   BLIND UNBLIND
 syn keyword verifpalPrimitive   PUBKEY DH_KEX
+syn keyword verifpalPrimitive   KEM_ENCAP KEM_DECAP
 
 " ---------------------------------------------------------------------------
 " Special values
