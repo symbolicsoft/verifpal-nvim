@@ -31,9 +31,14 @@ use "symbolicsoft/verifpal-nvim"
 
 `setup()` is optional. Every default works on its own.
 
-Needs Neovim 0.10 or newer, and the `verifpal` binary for anything that runs
-an analysis. Everything else — highlighting, hover, completion, folding —
-works without it. `:checkhealth verifpal` reports what was found.
+Needs Neovim 0.11 or newer and Verifpal 1.1 or newer.
+
+Everything this plugin does now comes from `verifpal lsp`, the language server
+built into the Verifpal binary: highlighting, hover, completion, signature
+help, diagnostics, folding, symbols, go-to-definition, references, rename,
+formatting and the attacker analysis. Without the binary there is no
+highlighting either — the cost of having one source of truth for the language
+instead of a copy that drifts. `:checkhealth verifpal` reports what was found.
 
 ## Verification
 
@@ -95,21 +100,23 @@ reported as one.
 
 `K` over any primitive, query kind, weakening assumption or keyword shows its
 signature, arity, output count, whether it may be checked with `?`, which
-weakening assumptions it accepts, and what it means. Lookup is
-case-insensitive, because Verifpal is: `pubkey(a)` and `PUBKEY(a)` are the
-same call.
+weakening assumptions it accepts, and what it means — read from the engine's
+own spec registry, so the arity is the arity the analysis will enforce. Over a
+constant it shows who created it, what it was assigned, who knows it and from
+whom, and which phases it appears in.
 
-`<C-x><C-o>` completes the language, offering what makes sense where the
-cursor is: query kinds inside `queries[ ... ]`, weakening assumptions inside a
-primitive's parameter list, qualifiers after `knows`, primitives inside a
-`principal` block.
+Completion offers what makes sense where the cursor is: query kinds inside
+`queries[ ... ]`, weakening assumptions inside a primitive's parameter list,
+qualifiers after `knows`, primitives and known constants inside a `principal`
+block.
 
 ## Formatting
 
-`:VerifpalFormat` reformats the buffer with verifpal's canonical formatter.
-Comments survive, the cursor stays put, an already-canonical buffer is not
-touched at all, and nothing is saved to disk. `format_on_save = true` runs it
-on every write.
+`:VerifpalFormat` reformats the buffer with verifpal's canonical formatter, as
+does `gq` and anything else that goes through `vim.lsp.buf.format`. Comments
+survive, the cursor stays put, an already-canonical buffer is not touched at
+all, and nothing is saved to disk. `format_on_save = true` runs it on every
+write.
 
 ## Diagrams
 
@@ -133,15 +140,19 @@ Bob
 
 ## Editing
 
-Syntax highlighting covers block keywords, attacker modes, declarations,
-qualifiers, all five query kinds, all 25 primitives, declared weakening
-assumptions, the checked-primitive `?`, the anonymous constant `_`, `nil`,
-both arrow forms (`->` and `→`), and both comment forms.
+Highlighting comes from the server's semantic tokens, so it reflects what the
+parser actually decided: a constant is highlighted as a constant because the
+parser bound one there, a primitive carries the `defaultLibrary` modifier
+because the engine defines it, and a constant's declaration is marked as a
+declaration. There is no separate syntax file to drift.
 
-Folding and indenting are driven by the model's own bracket structure rather
-than by matching line shapes, so a guarded value (`[ga]`) and a capability
-parameter (`SIGN[forgeable]`) create no folds, and a bracket inside a comment
-closes nothing.
+Folding comes from the AST through `vim.lsp.foldexpr`, so a guarded value
+(`[ga]`) and a capability parameter (`SIGN[forgeable]`) create no folds, and a
+bracket inside a comment closes nothing.
+
+`gd`, `gr`, `grn` and `K` work as they do for any language server: jump to
+where a constant was declared, list every use of it, rename it everywhere, and
+read what the trace records about it.
 
 ## Commands
 
@@ -153,6 +164,7 @@ closes nothing.
 | `:VerifpalClear` | Clear this plugin's diagnostics |
 | `:VerifpalFormat` | Reformat the buffer |
 | `:VerifpalDiagram[!]` | Show the protocol diagram (`!` for mermaid source) |
+| `:VerifpalRestart` | Restart the language server |
 | `:VerifpalInfo` | Report the binary in use and what it supports |
 
 ## Configuration
@@ -161,25 +173,17 @@ closes nothing.
 require("verifpal").setup({
   path = "verifpal",        -- binary path, or a name looked up in $PATH
   sessions = nil,           -- nil defers to verifpal's own default of 2
-  timeout = 600000,         -- ms before a running analysis is killed
   verify_on_save = false,
   format_on_save = false,
-  hover_key = "K",          -- or false to bind nothing
-  completion = true,
-  fold = true,
-  indent = true,
   notify = true,
-  diagnostics = {
-    enabled = true,
-    attack = vim.diagnostic.severity.ERROR,
-    pass = vim.diagnostic.severity.INFO,  -- or false to mark nothing
-    trace = true,           -- carry the attack trace in the diagnostic
-  },
   panel = { split = "botright", height = 20, focus = true },
 })
 ```
 
-A misspelled option is reported rather than silently ignored.
+A misspelled option is reported rather than silently ignored. The options that
+used to configure hovering, completion, folding, indenting and diagnostic
+severities are gone: those are the language server's business now, and are
+configured the way you configure them for every other language.
 
 For a statusline: `require("verifpal").statusline()` returns a spinner while
 an analysis runs and the verdict once it has finished.
@@ -188,12 +192,12 @@ See `:help verifpal` for the rest, including the Lua API.
 
 ## Older verifpal releases
 
-The plugin probes the binary it finds rather than assuming a version, so an
-older verifpal degrades instead of failing. Without `verify --format json`,
-verdicts still come from verifpal's own result code and remain exact, but
-there are no attack traces or timings — and the plugin says so rather than
-leaving you to wonder. `:checkhealth verifpal` reports which interfaces the
-binary you have supports.
+There is no graceful degradation any more, and that is deliberate. The
+`internal-json` interface this plugin used to drive has been removed from
+Verifpal, and everything now goes through `verifpal lsp`. A binary without an
+`lsp` subcommand is reported plainly at startup rather than half-working:
+`:checkhealth verifpal` names the problem and `:VerifpalInfo` shows what was
+found.
 
 ## Development
 

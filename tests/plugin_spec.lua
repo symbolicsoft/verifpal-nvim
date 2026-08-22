@@ -41,40 +41,10 @@ T.test("plugin: the filetype plugin sets the buffer up", function()
 	T.eq(vim.bo[bufnr].commentstring, "// %s")
 	T.eq(vim.bo[bufnr].shiftwidth, 4)
 	T.eq(vim.bo[bufnr].expandtab, false)
-	T.matches(vim.bo[bufnr].omnifunc, "verifpal%.lang")
-	T.matches(vim.bo[bufnr].indentexpr, "verifpal%.lang")
+	T.eq(vim.b[bufnr].verifpal_attached, true)
+	T.matches(vim.wo.foldexpr, "vim%.lsp%.foldexpr")
 	T.eq(vim.b[bufnr].verifpal_attached, true)
 	vim.api.nvim_buf_delete(bufnr, { force = true })
-end)
-
-T.test("plugin: hover is bound to the configured key, and can be unbound", function()
-	local saved = vim.deepcopy(config.options)
-
-	verifpal.setup({ hover_key = "<leader>vk" })
-	local bufnr = T.buffer(T.model("plain.vp"), "keys.vp")
-	vim.cmd("doautocmd FileType")
-	local maps = vim.api.nvim_buf_get_keymap(bufnr, "n")
-	local found = false
-	for _, map in ipairs(maps) do
-		if map.desc and map.desc:match("^Verifpal") then
-			found = true
-		end
-	end
-	T.ok(found, "the configured key is mapped")
-	vim.api.nvim_buf_delete(bufnr, { force = true })
-
-	verifpal.setup({ hover_key = false })
-	local plain = T.buffer(T.model("plain.vp"), "nokeys.vp")
-	vim.cmd("doautocmd FileType")
-	for _, map in ipairs(vim.api.nvim_buf_get_keymap(plain, "n")) do
-		T.ok(
-			not (map.desc and map.desc:match("^Verifpal: documentation")),
-			"hover_key = false binds nothing"
-		)
-	end
-	vim.api.nvim_buf_delete(plain, { force = true })
-
-	config.options = saved
 end)
 
 T.test("plugin: setup reports a misspelled option and keeps the rest", function()
@@ -84,25 +54,25 @@ T.test("plugin: setup reports a misspelled option and keeps the rest", function(
 	vim.notify = function(msg)
 		notifications[#notifications + 1] = msg
 	end
-	local ok = verifpal.setup({ hover_ky = "K", timeout = 1234 })
+	local ok = verifpal.setup({ notfy = true, sessions = 3 })
 	vim.notify = original
 	T.eq(ok, false, "setup reports that something was wrong")
 	T.eq(#notifications, 1)
-	T.matches(notifications[1], "unknown option `hover_ky`")
-	T.eq(config.get("timeout"), 1234, "the good option still applied")
+	T.matches(notifications[1], "unknown option `notfy`")
+	T.eq(config.get("sessions"), 3, "the good option still applied")
 	config.options = saved
 end)
 
 T.test("plugin: setup re-attaches a buffer that is already open", function()
 	local saved = vim.deepcopy(config.options)
-	verifpal.setup({ completion = true })
+	verifpal.setup({ notify = false })
 	local bufnr = T.buffer(T.model("plain.vp"), "reattach.vp")
 	vim.cmd("doautocmd FileType")
-	T.matches(vim.bo[bufnr].omnifunc, "verifpal%.lang")
+	T.eq(vim.b[bufnr].verifpal_attached, true)
 
 	vim.bo[bufnr].omnifunc = ""
-	verifpal.setup({ completion = true })
-	T.matches(vim.bo[bufnr].omnifunc, "verifpal%.lang", "a live buffer picked up the new config")
+	verifpal.setup({ notify = false })
+	T.eq(vim.b[bufnr].verifpal_attached, true, "a live buffer stayed attached")
 
 	vim.api.nvim_buf_delete(bufnr, { force = true })
 	config.options = saved
@@ -110,7 +80,7 @@ end)
 
 T.test("plugin: re-attaching does not stack save hooks", function()
 	local saved = vim.deepcopy(config.options)
-	verifpal.setup({ format_on_save = true, hover_key = "K" })
+	verifpal.setup({ format_on_save = true })
 	local bufnr = T.buffer(T.model("plain.vp"), "reattach2.vp")
 	vim.cmd("doautocmd FileType")
 
@@ -124,15 +94,9 @@ T.test("plugin: re-attaching does not stack save hooks", function()
 	T.eq(hooks(), 1)
 	-- setup() re-attaches every open buffer, and an autocmd registered twice
 	-- would format the buffer twice on every write.
-	verifpal.setup({ format_on_save = true, hover_key = "K" })
-	verifpal.setup({ format_on_save = true, hover_key = "K" })
+	verifpal.setup({ format_on_save = true })
+	verifpal.setup({ format_on_save = true })
 	T.eq(hooks(), 1, "still exactly one hook")
-
-	-- And moving the hover key leaves the old one unbound.
-	verifpal.setup({ format_on_save = true, hover_key = "<leader>vk" })
-	for _, map in ipairs(vim.api.nvim_buf_get_keymap(bufnr, "n")) do
-		T.ok(map.lhs ~= "K", "the previous hover key was released")
-	end
 
 	vim.api.nvim_buf_delete(bufnr, { force = true })
 	config.options = saved
@@ -158,6 +122,7 @@ T.test("plugin: format_on_save formats the file that is written", function()
 
 	verifpal.setup({ path = binary, format_on_save = true, notify = false })
 	vim.cmd("edit " .. vim.fn.fnameescape(path))
+	T.attached(vim.api.nvim_get_current_buf())
 	vim.cmd("silent write")
 	local written = table.concat(vim.fn.readfile(path), "\n")
 	T.matches(written, "\n\tknows public c0\n", "the written file is canonical")
@@ -181,6 +146,7 @@ T.test("plugin: verify_on_save runs the analysis after a write", function()
 	verifpal.setup({ path = binary, verify_on_save = true, notify = false })
 	vim.cmd("edit " .. vim.fn.fnameescape(path))
 	local bufnr = vim.api.nvim_get_current_buf()
+	T.attached(bufnr)
 
 	local done = false
 	vim.api.nvim_create_autocmd("User", {
@@ -212,7 +178,7 @@ T.test("plugin: info describes the binary in use", function()
 	local lines = verifpal.info()
 	T.matches(lines[1], "^binary:")
 	T.matches(lines[2], "^version: %d+%.%d+%.%d+")
-	T.matches(lines[3], "^supports:")
+	T.matches(lines[3], "^server:")
 	config.options = saved
 	reset()
 end)

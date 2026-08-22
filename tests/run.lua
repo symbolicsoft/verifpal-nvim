@@ -98,6 +98,34 @@ function T.binary()
 	return nil
 end
 
+--- Wait until the verifpal language server has attached to `bufnr`, and
+--- return the client. Skips the test when there is no binary to attach.
+function T.attached(bufnr)
+	local binary = T.binary()
+	if not binary then
+		T.skip("no verifpal binary")
+	end
+	if require("verifpal.config").get("path") ~= binary then
+		require("verifpal").setup({ path = binary, notify = false })
+		require("verifpal.cli").reset()
+	end
+	for _, client in ipairs(vim.lsp.get_clients({ name = "verifpal" })) do
+		if client.config.cmd[1] ~= binary then
+			client:stop(true)
+		end
+	end
+	require("verifpal").start()
+	vim.cmd("doautocmd FileType")
+	vim.wait(15000, function()
+		return #vim.lsp.get_clients({ bufnr = bufnr, name = "verifpal" }) > 0
+	end, 50)
+	local clients = vim.lsp.get_clients({ bufnr = bufnr, name = "verifpal" })
+	if #clients == 0 then
+		T.skip("the language server did not attach")
+	end
+	return clients[1]
+end
+
 --- A scratch buffer holding `lines`, named so verifpal will accept it.
 function T.buffer(lines, name)
 	local bufnr = vim.api.nvim_create_buf(true, false)

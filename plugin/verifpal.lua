@@ -10,9 +10,9 @@ if vim.g.loaded_verifpal then
 end
 vim.g.loaded_verifpal = true
 
-if vim.fn.has("nvim-0.10") ~= 1 then
+if vim.fn.has("nvim-0.11") ~= 1 then
 	vim.notify(
-		"verifpal.nvim requires Neovim 0.10 or newer (it uses vim.system).",
+		"verifpal.nvim requires Neovim 0.11 or newer (it uses vim.lsp.config).",
 		vim.log.levels.ERROR,
 		{ title = "Verifpal" }
 	)
@@ -40,6 +40,14 @@ end, {
 	nargs = "?",
 	desc = "Verifpal: run the attacker analysis on this buffer",
 })
+
+command("VerifpalRestart", function()
+	for _, client in ipairs(vim.lsp.get_clients({ name = "verifpal" })) do
+		client:stop()
+	end
+	require("verifpal.cli").reset()
+	vim.notify("Verifpal: language server restarting", vim.log.levels.INFO, { title = "Verifpal" })
+end, { desc = "Verifpal: restart the language server" })
 
 command("VerifpalCancel", function()
 	if not require("verifpal").cancel(0) then

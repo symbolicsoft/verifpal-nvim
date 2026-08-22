@@ -11,8 +11,6 @@
 
 local M = {}
 
-local severity = vim.diagnostic.severity
-
 M.defaults = {
 	--- Path to the verifpal binary, or a bare name looked up in $PATH.
 	path = "verifpal",
@@ -20,40 +18,14 @@ M.defaults = {
 	--- Sessions per principal. nil defers to the binary's own default (2).
 	sessions = nil,
 
-	--- Milliseconds before a running analysis is killed. Verification of a
-	--- large model is genuinely slow, so this is deliberately generous.
-	timeout = 600000,
-
 	--- Verify the buffer after every write.
 	verify_on_save = false,
 
 	--- Reformat the buffer before every write.
 	format_on_save = false,
 
-	--- Normal-mode key for hover documentation, or false to bind nothing.
-	hover_key = "K",
-
-	--- Set 'omnifunc' so <C-x><C-o> completes primitives and keywords.
-	completion = true,
-
-	--- Fold and indent on the model's own bracket structure.
-	fold = true,
-	indent = true,
-
 	--- vim.notify on summaries, warnings and errors.
 	notify = true,
-
-	diagnostics = {
-		enabled = true,
-		--- Severity for a query the attacker contradicted.
-		attack = severity.ERROR,
-		--- Severity for a query that held, or false to place no mark.
-		pass = severity.INFO,
-		--- Append the narrated attack trace to a failing query's message, so
-		--- vim.diagnostic.open_float shows the whole attack. Turn this off if
-		--- you display diagnostics as virtual text, which flattens newlines.
-		trace = true,
-	},
 
 	panel = {
 		--- Split command used to open the results panel.
@@ -107,21 +79,6 @@ local function check_shapes(opts, problems)
 		local n = opts.sessions
 		if type(n) ~= "number" or n ~= math.floor(n) or n < 1 or n > 16 then
 			problems[#problems + 1] = "`sessions` expects an integer between 1 and 16"
-		end
-	end
-	if opts.timeout ~= nil and (type(opts.timeout) ~= "number" or opts.timeout <= 0) then
-		problems[#problems + 1] = "`timeout` expects a positive number of milliseconds"
-	end
-	if opts.hover_key ~= nil and opts.hover_key ~= false and type(opts.hover_key) ~= "string" then
-		problems[#problems + 1] = "`hover_key` expects a string or false"
-	end
-	local d = opts.diagnostics
-	if type(d) == "table" then
-		if d.pass ~= nil and d.pass ~= false and type(d.pass) ~= "number" then
-			problems[#problems + 1] = "`diagnostics.pass` expects a vim.diagnostic.severity or false"
-		end
-		if d.attack ~= nil and type(d.attack) ~= "number" then
-			problems[#problems + 1] = "`diagnostics.attack` expects a vim.diagnostic.severity"
 		end
 	end
 	return problems
