@@ -26,7 +26,15 @@ local OPTIONAL = {
 		lost = "formatting and diagramming an unsaved buffer",
 	},
 	{ key = "sessions", what = "verify --sessions", lost = "choosing the session count" },
-	{ key = "diagram", what = "the diagram subcommand", lost = "nothing the plugin needs" },
+}
+
+--- Present but not needed: the plugin draws diagrams through `internal-json`,
+--- so reporting the absence of `diagram` as a warning would be telling the
+--- user to act on something that costs them nothing.
+local INFORMATIONAL = {
+	{ key = "diagram", what = "the diagram subcommand" },
+	{ key = "quiet", what = "verify --quiet" },
+	{ key = "color", what = "verify --color" },
 }
 
 function M.check()
@@ -69,6 +77,15 @@ function M.check()
 				{ "Without it: " .. feature.lost, "Upgrade at https://verifpal.com" }
 			)
 		end
+	end
+	for _, feature in ipairs(INFORMATIONAL) do
+		info(
+			string.format(
+				"%s: %s",
+				feature.what,
+				features[feature.key] and "supported" or "not supported (not needed)"
+			)
+		)
 	end
 
 	start("verifpal.nvim configuration")

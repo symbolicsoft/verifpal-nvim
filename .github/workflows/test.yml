@@ -9,6 +9,8 @@ on:
   pull_request:
 
 jobs:
+  # The plugin's own behavior, across the Neovim versions it claims to
+  # support. The tests that need a verifpal binary skip themselves here.
   test:
     name: test (${{ matrix.os }}, nvim ${{ matrix.nvim }})
     runs-on: ${{ matrix.os }}
@@ -19,21 +21,30 @@ jobs:
         nvim: [v0.10.4, stable, nightly]
     steps:
       - uses: actions/checkout@v4
-
       - uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: ${{ matrix.nvim }}
+      - run: make test
 
-      # The suite is meaningful without a binary — the tests that need one
-      # skip themselves — but building it exercises the paths that matter.
+  # The same suite against a real engine, which is what exercises the
+  # verification, formatting and diagram paths end to end.
+  integration:
+    name: integration (verifpal from source)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build verifpal
         run: |
-          git clone --depth 1 https://github.com/symbolicsoft/verifpal.git ../verifpal
-          cd ../verifpal && cargo build --release
-
+          git clone --depth 1 https://github.com/symbolicsoft/verifpal.git "$RUNNER_TEMP/verifpal"
+          cargo build --release --manifest-path "$RUNNER_TEMP/verifpal/Cargo.toml"
       - name: Test
-        run: make test
+        run: VERIFPAL_BIN="$RUNNER_TEMP/verifpal/target/release/verifpal" make test
 
   lint:
     runs-on: ubuntu-latest
@@ -44,6 +55,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: latest
           args: --check lua tests
-      - uses: lunarmodules/luacheck@v1
-        with:
-          args: lua tests
+      - name: Install luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luarocks
+          sudo luarocks install luacheck
+      - run: luacheck lua tests
