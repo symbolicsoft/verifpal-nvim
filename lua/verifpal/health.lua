@@ -22,12 +22,12 @@ end
 function M.check()
 	start("verifpal.nvim")
 
-	if vim.fn.has("nvim-0.11") == 1 then
-		ok("Neovim 0.11 or newer")
+	if vim.fn.has("nvim-0.12.4") == 1 then
+		ok("Neovim 0.12.4 or newer")
 	else
-		err("Neovim 0.11 or newer is required", {
-			"This plugin drives verifpal through its language server,",
-			"which needs vim.lsp.config, vim.lsp.enable and vim.lsp.foldexpr.",
+		err("Neovim 0.12.4 or newer is required", {
+			"This plugin drives verifpal through its language server, and needs",
+			"the vim.lsp folding and formatting behaviour that 0.12.4 settled.",
 		})
 		return
 	end

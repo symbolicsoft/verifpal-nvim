@@ -9,3 +9,6 @@ indent_type = "Tabs"
 indent_width = 4
 quote_style = "AutoPreferDouble"
 call_parentheses = "Always"
+
+# `::continue::` is Lua 5.2 label syntax; stylua parses Luau by default.
+syntax = "Lua52"

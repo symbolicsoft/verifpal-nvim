@@ -72,12 +72,7 @@ local function on_report(report)
 		local r = reports[uri]
 		local attacks = r.attacks or 0
 		notify(
-			string.format(
-				"%s  ·  %d of %d contradicted",
-				r.code or "",
-				attacks,
-				#r.queries
-			),
+			string.format("%s  ·  %d of %d contradicted", r.code or "", attacks, #r.queries),
 			attacks > 0 and vim.log.levels.WARN or vim.log.levels.INFO
 		)
 	end
@@ -161,12 +156,17 @@ function M.verify(bufnr, opts)
 	opts = opts or {}
 	local uri = M.uri(bufnr)
 	local sessions = opts.sessions or config.get("sessions")
-	local ok = M.command(bufnr, "verifpal.analyze", { { uri = uri, sessions = sessions } }, function(err, result)
-		if err or not result or not result.accepted then
-			running[uri] = nil
-			notify("the language server declined to analyze this buffer", vim.log.levels.ERROR)
+	local ok = M.command(
+		bufnr,
+		"verifpal.analyze",
+		{ { uri = uri, sessions = sessions } },
+		function(err, result)
+			if err or not result or not result.accepted then
+				running[uri] = nil
+				notify("the language server declined to analyze this buffer", vim.log.levels.ERROR)
+			end
 		end
-	end)
+	)
 	if not ok then
 		notify("the language server is not attached to this buffer", vim.log.levels.ERROR)
 		return false

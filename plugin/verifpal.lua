@@ -10,9 +10,9 @@ if vim.g.loaded_verifpal then
 end
 vim.g.loaded_verifpal = true
 
-if vim.fn.has("nvim-0.11") ~= 1 then
+if vim.fn.has("nvim-0.12.4") ~= 1 then
 	vim.notify(
-		"verifpal.nvim requires Neovim 0.11 or newer (it uses vim.lsp.config).",
+		"verifpal.nvim requires Neovim 0.12.4 or newer (older LSP folding crashes on format).",
 		vim.log.levels.ERROR,
 		{ title = "Verifpal" }
 	)

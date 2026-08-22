@@ -247,7 +247,10 @@ function M.results(report, source_buf)
 			for _, win in ipairs(vim.api.nvim_list_wins()) do
 				if vim.api.nvim_win_get_buf(win) == source_buf then
 					vim.api.nvim_set_current_win(win)
-					vim.api.nvim_win_set_cursor(win, { query.line, math.max((query.column or 1) - 1, 0) })
+					vim.api.nvim_win_set_cursor(
+						win,
+						{ query.line, math.max((query.column or 1) - 1, 0) }
+					)
 					vim.cmd("normal! zz")
 					return
 				end

@@ -26,8 +26,9 @@ CONTENTS                                                   *verifpal-contents*
 ==============================================================================
 1. REQUIREMENTS                                        *verifpal-requirements*
 
-Neovim 0.11 or newer. The plugin drives Verifpal through its language server
-and uses |vim.lsp.config()|, |vim.lsp.enable()| and |vim.lsp.foldexpr()|.
+Neovim 0.12.4 or newer. The plugin drives Verifpal through its language server
+and uses |vim.lsp.config()|, |vim.lsp.enable()| and |vim.lsp.foldexpr()|. Older
+releases crash in the LSP folding handler when a buffer is formatted on save.
 
 Verifpal 1.1 or newer, for the `lsp` subcommand. Install it from
 <https://verifpal.com>.

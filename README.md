@@ -31,7 +31,7 @@ use "symbolicsoft/verifpal-nvim"
 
 `setup()` is optional. Every default works on its own.
 
-Needs Neovim 0.11 or newer and Verifpal 1.1 or newer.
+Needs Neovim 0.12.4 or newer and Verifpal 1.1 or newer.
 
 Everything this plugin does now comes from `verifpal lsp`, the language server
 built into the Verifpal binary: highlighting, hover, completion, signature

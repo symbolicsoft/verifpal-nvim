@@ -22,7 +22,10 @@ T.test("plugin: every command is registered", function()
 		"VerifpalInfo",
 	}) do
 		T.ok(commands[name] ~= nil, ":" .. name .. " exists")
-		T.ok(commands[name].definition ~= "", ":" .. name .. " has a description")
+		-- Neovim 0.13 moved the description of a Lua-callback command out of
+		-- `definition`, which is now always empty, and into `desc`.
+		local desc = commands[name].desc or commands[name].definition
+		T.ok(desc ~= nil and desc ~= "", ":" .. name .. " has a description")
 	end
 end)
 
