@@ -1,5 +1,7 @@
 # verifpal-nvim
 
+[![CI](https://github.com/symbolicsoft/verifpal-nvim/actions/workflows/test.yml/badge.svg)](https://github.com/symbolicsoft/verifpal-nvim/actions/workflows/test.yml)
+
 Neovim support for [Verifpal](https://verifpal.com), the symbolic formal
 verification tool for cryptographic protocols. Write a protocol model in a
 `.vp` file, run the attacker analysis without leaving the editor, and read the
