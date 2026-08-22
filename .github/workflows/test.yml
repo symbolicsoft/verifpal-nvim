@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: © 2019-2026 Nadim Kobeissi <nadim@symbolic.software>
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, nvim ${{ matrix.nvim }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        nvim: [v0.10.4, stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.nvim }}
+
+      # The suite is meaningful without a binary — the tests that need one
+      # skip themselves — but building it exercises the paths that matter.
+      - name: Build verifpal
+        run: |
+          git clone --depth 1 https://github.com/symbolicsoft/verifpal.git ../verifpal
+          cd ../verifpal && cargo build --release
+
+      - name: Test
+        run: make test
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --check lua tests
+      - uses: lunarmodules/luacheck@v1
+        with:
+          args: lua tests

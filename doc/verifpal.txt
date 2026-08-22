@@ -1,0 +1,391 @@
+*verifpal.txt*   Verifpal support for Neovim: verification, diagnostics, docs
+
+                                                                    *verifpal*
+                                                              *verifpal.nvim*
+
+Neovim support for Verifpal <https://verifpal.com>, the symbolic formal
+verification tool for cryptographic protocols. Write a protocol model in a
+`.vp` file, run the attacker analysis without leaving the editor, and read the
+attack it found in the names your model gave the values.
+
+==============================================================================
+CONTENTS                                                   *verifpal-contents*
+
+    1. Requirements .......................... |verifpal-requirements|
+    2. Installation .......................... |verifpal-installation|
+    3. Commands .............................. |verifpal-commands|
+    4. Configuration ......................... |verifpal-configuration|
+    5. Diagnostics ........................... |verifpal-diagnostics|
+    6. The results panel ..................... |verifpal-results|
+    7. Hover documentation ................... |verifpal-hover|
+    8. Completion ............................ |verifpal-completion|
+    9. Formatting ............................ |verifpal-formatting|
+   10. Diagrams .............................. |verifpal-diagram|
+   11. Folding and indenting ................. |verifpal-folding|
+   12. Statusline ............................ |verifpal-statusline|
+   13. Lua API ............................... |verifpal-api|
+   14. Older verifpal releases ............... |verifpal-compatibility|
+   15. Troubleshooting ....................... |verifpal-troubleshooting|
+
+==============================================================================
+1. REQUIREMENTS                                        *verifpal-requirements*
+
+- Neovim 0.10 or newer. The plugin runs the analysis with |vim.system()|,
+  which arrived in 0.10.
+- The `verifpal` binary, on your `$PATH` or named in |verifpal-configuration|.
+  Get it from https://verifpal.com.
+
+Everything except running the binary works without it: syntax highlighting,
+hover documentation, completion, folding and indenting are all local.
+
+Run `:checkhealth verifpal` to see which binary the plugin found and what it
+can do with it.
+
+==============================================================================
+2. INSTALLATION                                        *verifpal-installation*
+
+With lazy.nvim: >lua
+
+    { "symbolicsoft/verifpal-nvim", ft = "verifpal" }
+<
+With a binary somewhere unusual: >lua
+
+    {
+      "symbolicsoft/verifpal-nvim",
+      ft = "verifpal",
+      opts = { path = "/usr/local/bin/verifpal" },
+    }
+<
+With packer.nvim: >lua
+
+    use "symbolicsoft/verifpal-nvim"
+<
+Calling |verifpal.setup()| is optional. Every default works on its own, and
+the buffer-local half is attached from the filetype plugin, so a plugin
+manager that only puts this on the runtimepath is a complete installation.
+
+==============================================================================
+3. COMMANDS                                                *verifpal-commands*
+
+                                                              *:VerifpalVerify*
+:VerifpalVerify [{sessions}]
+        Run the attacker analysis on the current buffer and report each
+        query's verdict as a diagnostic. The analysis runs in the background:
+        the editor stays usable, and the summary arrives when it finishes.
+
+        The buffer is analyzed as it stands, unsaved edits included. Nothing
+        is written to your file.
+
+        {sessions} overrides how many concurrent sessions each principal runs
+        for this one analysis. Verifpal's own default is 2. Lower it to 1 for
+        a model too large to afford the replication; raise it to look for
+        attacks that need more interleaving.
+
+                                                              *:VerifpalCancel*
+:VerifpalCancel
+        Stop the analysis running for this buffer. Verification of a large
+        model can take minutes, and there is no penalty for interrupting one.
+
+                                                             *:VerifpalResults*
+:VerifpalResults
+        Open the results panel for the last analysis, with each query's
+        conclusion and its narrated attack trace. Runs an analysis first if
+        there has not been one. See |verifpal-results|.
+
+                                                               *:VerifpalClear*
+:VerifpalClear
+        Remove this plugin's diagnostics and forget the last analysis.
+
+                                                              *:VerifpalFormat*
+:VerifpalFormat
+        Reformat the buffer with verifpal's canonical formatter. Comments are
+        preserved. The cursor stays where you left it, an already-canonical
+        buffer is not touched at all, and nothing is saved to disk.
+
+                                                             *:VerifpalDiagram*
+:VerifpalDiagram[!]
+        Show the protocol as a sequence of principals and the messages between
+        them. With `!`, show verifpal's mermaid source instead.
+
+                                                                *:VerifpalInfo*
+:VerifpalInfo
+        Report which binary the plugin will use, its version, and which of its
+        interfaces are available. See |verifpal-compatibility|.
+
+==============================================================================
+4. CONFIGURATION                                      *verifpal-configuration*
+
+                                                            *verifpal.setup()*
+Pass a table to `require("verifpal").setup()`. Anything you leave out keeps
+its default; anything you misspell is reported rather than silently ignored.
+
+Defaults: >lua
+
+    require("verifpal").setup({
+      -- Path to the binary, or a bare name looked up in $PATH.
+      path = "verifpal",
+
+      -- Sessions per principal. nil defers to verifpal's own default of 2.
+      sessions = nil,
+
+      -- Milliseconds before a running analysis is killed.
+      timeout = 600000,
+
+      -- Run the analysis after every write.
+      verify_on_save = false,
+
+      -- Reformat before every write.
+      format_on_save = false,
+
+      -- Normal-mode key for hover documentation, or false to bind nothing.
+      hover_key = "K",
+
+      -- Set 'omnifunc' so <C-x><C-o> completes primitives and keywords.
+      completion = true,
+
+      -- Fold and indent on the model's own bracket structure.
+      fold = true,
+      indent = true,
+
+      -- vim.notify on summaries, warnings and errors.
+      notify = true,
+
+      diagnostics = {
+        enabled = true,
+        attack = vim.diagnostic.severity.ERROR,
+        pass = vim.diagnostic.severity.INFO,  -- or false to mark nothing
+        trace = true,
+      },
+
+      panel = {
+        split = "botright",
+        height = 20,
+        focus = true,
+      },
+    })
+<
+==============================================================================
+5. DIAGNOSTICS                                          *verifpal-diagnostics*
+
+Each query in the model's `queries` block gets a diagnostic on its own line.
+A query the attacker contradicted is an error; one that held is an info mark,
+which you can turn off with `diagnostics.pass = false`.
+
+A model that does not parse or does not pass verifpal's sanity checks gets a
+single diagnostic on the line that caused it, carrying whatever note or help
+verifpal attached.
+
+With `diagnostics.trace` on (the default), a contradicted query's message
+carries the whole narrated attack trace, so |vim.diagnostic.open_float()|
+shows the attack without opening the panel. Turn it off if you display
+diagnostics as 'virtualtext', which flattens the newlines into one long line.
+
+These are ordinary Neovim diagnostics, so everything that works on those
+works here: |vim.diagnostic.setloclist()| collects a model's verdicts into the
+location list, |]d| and |[d| step between them, and
+|vim.diagnostic.open_float()| shows one in full.
+
+A verdict is only ever placed on a line the plugin is sure produced it. If the
+queries it can see and the results verifpal returned disagree, every
+diagnostic goes on the `queries` block header instead, and the summary says
+so — a verdict on the wrong query is worse than a verdict with no line.
+
+                                                       *verifpal-assumptions*
+If the model declares any weakening assumptions — `PUBKEY[weak](a)`,
+`SIGN[forgeable](sk, m)`, `ENC[malleable](k, m)` — they are listed in the
+summary and at the top of the results panel. A model that declares one is not
+being analyzed on its own terms: an attack found under it is genuine only
+under that assumption, and a query that holds is conditional on it. Neither is
+an unconditional result, so neither is reported as one.
+
+==============================================================================
+6. THE RESULTS PANEL                                        *verifpal-results*
+
+|:VerifpalResults| opens a panel holding, for each query:
+
+- the verdict, `PASS` or `FAIL`,
+- the conclusion in verifpal's words,
+- the minimized attack trace, as numbered causal steps,
+- any `precondition` the query declared, and whether it was still reached.
+
+The trace is the reason to believe a verdict. Verifpal minimizes the attack
+before narrating it, so what remains is the substitutions that mattered, in
+the names your model gave the values. Reading it is how a modelling mistake is
+told apart from a real attack.
+
+In the panel:
+
+    <CR>    jump to the query in the model
+    q       close the panel
+
+==============================================================================
+7. HOVER DOCUMENTATION                                        *verifpal-hover*
+
+Press `K` over any primitive, query kind, weakening assumption or keyword for
+its signature, arity, output count, whether it may be checked with `?`, which
+weakening assumptions it accepts, and what it means.
+
+Lookup is case-insensitive, because Verifpal is: `pubkey(a)` and `PUBKEY(a)`
+are the same call.
+
+If the word under the cursor is not part of the language, `K` does whatever it
+would have done otherwise. Set `hover_key = false` to bind nothing, or a
+different key to move it.
+
+==============================================================================
+8. COMPLETION                                            *verifpal-completion*
+
+'omnifunc' is set, so |i_CTRL-X_CTRL-O| completes the language. What is
+offered depends on where the cursor is:
+
+- inside `queries[ ... ]`: the five query kinds and `precondition`
+- inside a primitive's parameter list, `AEAD_ENC[`: weakening assumptions
+- after `knows`: `public`, `private`, `password`
+- inside a `principal` block: primitives and declaration keywords
+- at the top level: `attacker`, `principal`, `phase`, `queries`
+
+A lowercase prefix completes to the canonical uppercase name.
+
+==============================================================================
+9. FORMATTING                                            *verifpal-formatting*
+
+|:VerifpalFormat| pipes the buffer through verifpal's canonical formatter.
+Both `//` and `/* */` comments survive the round trip.
+
+To format on write: >lua
+
+    require("verifpal").setup({ format_on_save = true })
+<
+==============================================================================
+10. DIAGRAMS                                                *verifpal-diagram*
+
+|:VerifpalDiagram| renders the protocol as each principal's steps in order,
+with the messages between them called out:
+>
+    Alice
+        knows public c0
+        generates a
+        ga = PUBKEY(a)
+
+    Alice ──▶ Bob :  ga
+
+    Bob
+        gab = DH_KEX(ga, b)
+<
+`:VerifpalDiagram!` shows verifpal's mermaid `sequenceDiagram` source instead,
+for pasting somewhere that renders it.
+
+==============================================================================
+11. FOLDING AND INDENTING                                   *verifpal-folding*
+
+'foldmethod' is `expr` and 'indentexpr' is set, both driven by the model's own
+bracket structure rather than by matching line shapes. A guarded value
+(`[ga]`) and a capability parameter (`SIGN[forgeable]`) open and close on one
+line, so neither creates a fold, and a bracket inside a comment closes
+nothing.
+
+Folds start open. Set `fold = false` or `indent = false` to leave either
+alone.
+
+==============================================================================
+12. STATUSLINE                                          *verifpal-statusline*
+
+`require("verifpal").statusline()` returns a short status for the current
+buffer: a spinner while an analysis runs, the verdict once it has finished,
+and an empty string when there is nothing to say. >lua
+
+    vim.o.statusline = "%f %= %{v:lua.require'verifpal'.statusline()}"
+<
+==============================================================================
+13. LUA API                                                     *verifpal-api*
+
+                                                          *verifpal.verify()*
+require("verifpal").verify({bufnr}, {opts})
+        Run the analysis. {opts} may carry `sessions`, `silent`, and
+        `on_done`, called with the report when the analysis finishes.
+
+                                                          *verifpal.cancel()*
+require("verifpal").cancel({bufnr})
+        Stop the analysis for a buffer. Returns whether there was one.
+
+                                                          *verifpal.report()*
+require("verifpal").report({bufnr})
+        The last report for a buffer, or nil. A report carries `code`,
+        `attacks`, `sessions`, `elapsed_ms`, `assumptions`, `queries` and, when
+        the model did not verify, `error`. Each query carries `kind`, `query`,
+        `resolved`, `conclusion`, `trace` and `preconditions`.
+
+                                                          *verifpal.format()*
+require("verifpal").format({bufnr}, {opts})
+        Reformat a buffer. Returns `ok, changed`.
+
+                                                         *verifpal.results()*
+require("verifpal").results({bufnr})
+        Open the results panel.
+
+                                                         *verifpal.diagram()*
+require("verifpal").diagram({bufnr}, {raw})
+        Open the protocol diagram.
+
+                                                           *verifpal.hover()*
+require("verifpal").hover()
+        Show documentation for the word under the cursor. Returns whether
+        there was anything to show.
+
+                                                            *verifpal.info()*
+require("verifpal").info()
+        Lines describing the binary in use and what it supports.
+
+==============================================================================
+14. OLDER VERIFPAL RELEASES                          *verifpal-compatibility*
+
+The plugin probes the binary it finds rather than assuming a version, so an
+older verifpal degrades instead of failing. What it probes for, and what an
+older release costs you:
+
+`verify --format json`
+        The structured report. Without it, verdicts still come from verifpal's
+        own result code and remain exact, but there are no attack traces,
+        conclusions or timings, and the results panel says so.
+
+`internal-json`
+        Reads a model from stdin. Without it, formatting and diagramming need
+        the model to have a file name; a scratch copy is still used, so your
+        file is never written.
+
+`verify --sessions`
+        Without it, `:VerifpalVerify {sessions}` and the `sessions` option
+        have no effect and the binary's own default is used.
+
+`:checkhealth verifpal` names every one of these for the binary you have.
+
+==============================================================================
+15. TROUBLESHOOTING                                 *verifpal-troubleshooting*
+
+`:checkhealth verifpal` first: it reports the binary, its version, its
+interfaces, and the effective configuration.
+
+Verification seems to hang~
+        It is not hung, it is searching. Verifpal's active attacker search is
+        goal-directed and unbounded in effort, so a large model genuinely
+        takes minutes. |:VerifpalCancel| stops it. `:VerifpalVerify 1` cuts the
+        roughly fourfold cost of session replication.
+
+The analysis times out~
+        Raise `timeout`, or lower `sessions`.
+
+Diagnostics are all on the `queries` line~
+        The plugin could not match verifpal's results to the queries it found,
+        so it refused to guess. This should not happen; please report the
+        model at https://github.com/symbolicsoft/verifpal-nvim/issues.
+
+`K` does nothing useful~
+        The word under the cursor is not part of the language, so `K` fell
+        through to its usual behavior.
+
+==============================================================================
+LICENSE                                                     *verifpal-license*
+
+GPL-3.0-only. Copyright (c) 2019-2026 Nadim Kobeissi.
+
+vim:tw=78:ts=8:sw=8:noet:ft=help:norl:

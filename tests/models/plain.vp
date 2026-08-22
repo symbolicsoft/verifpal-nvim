@@ -1,0 +1,25 @@
+// SPDX-FileCopyrightText: © 2019-2026 Nadim Kobeissi <nadim@symbolic.software>
+// SPDX-License-Identifier: GPL-3.0-only
+//
+// The smallest model with one query that holds: Alice sends nothing, so
+// nothing about a is learnable. Used as the suite's "passes cleanly" fixture.
+
+attacker[passive]
+
+principal Alice[
+	knows public c0
+	generates a
+	ha = HASH(a, c0)
+]
+
+Alice -> Bob: ha
+
+principal Bob[
+	knows public c0
+	hb = HASH(ha, c0)
+]
+
+queries[
+	confidentiality? a
+	freshness? ha
+]

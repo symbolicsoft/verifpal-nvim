@@ -1,0 +1,44 @@
+// SPDX-FileCopyrightText: © 2019-2026 Nadim Kobeissi <nadim@symbolic.software>
+// SPDX-License-Identifier: GPL-3.0-only
+//
+// A model built to break naive query-line mapping. It has a block comment
+// carrying an unbalanced `]`, a guarded value, a capability parameter, a
+// query whose option block spans three lines, and a query written after that
+// option block — the position where a scanner that stops at the first
+// dedented `]` puts every later verdict on the wrong line.
+
+attacker[active]
+
+principal Alice[
+	knows public c0
+	knows private k
+	generates a
+	ga = PUBKEY(a)
+	/* a block comment holding a bracket: ]
+	   and a second line mentioning queries[ */
+	e = ENC[malleable](k, CONCAT(c0, c0))
+]
+
+Alice -> Bob: [ga], e
+
+principal Bob[
+	knows public c0
+	knows private k
+	x, y = SPLIT(DEC(k, e))?
+	receipt = MAC(k, x)
+]
+
+Bob -> Alice: receipt
+
+principal Alice[
+	_ = ASSERT(receipt, MAC(k, c0))?
+]
+
+queries[
+	confidentiality? k
+	authentication? Alice -> Bob: e[
+		precondition[Bob -> Alice: receipt]
+	]
+	freshness? ga
+	equivalence? x, y
+]

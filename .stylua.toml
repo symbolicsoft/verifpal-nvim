@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: © 2019-2026 Nadim Kobeissi <nadim@symbolic.software>
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Matches the Verifpal codebase: hard tabs, 100 columns.
+
+column_width = 100
+line_endings = "Unix"
+indent_type = "Tabs"
+indent_width = 4
+quote_style = "AutoPreferDouble"
+call_parentheses = "Always"
