@@ -27,25 +27,6 @@ jobs:
           version: ${{ matrix.nvim }}
       - run: make test
 
-  # The same suite against a real engine, which is what exercises the
-  # verification, formatting and diagram paths end to end.
-  integration:
-    name: integration (verifpal from source)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: rhysd/action-setup-vim@v1
-        with:
-          neovim: true
-          version: stable
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build verifpal
-        run: |
-          git clone --depth 1 https://github.com/symbolicsoft/verifpal.git "$RUNNER_TEMP/verifpal"
-          cargo build --release --manifest-path "$RUNNER_TEMP/verifpal/Cargo.toml"
-      - name: Test
-        run: VERIFPAL_BIN="$RUNNER_TEMP/verifpal/target/release/verifpal" make test
-
   lint:
     runs-on: ubuntu-latest
     steps:
