@@ -19,7 +19,7 @@ local REPORT = {
 			resolved = true,
 			conclusion = "m (m) is obtained by Attacker.",
 			trace = { "1. Attacker observes e on the wire.", "2. Attacker opens e with k." },
-			preconditions = { "Bob sends ack to Alice despite the query failing." },
+			preconditions = { "Bob still sends ack to Alice, so the failure counts." },
 		},
 		{
 			query = "authentication? Alice -> Bob: e",
