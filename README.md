@@ -135,7 +135,8 @@ Alice ──▶ Bob :  ga
 
 Bob
     gab = DH_KEX(ga, b)
-    e1 = AEAD_ENC(gab, m1, c0)
+    generates n_e1
+    e1 = AEAD_ENC(gab, n_e1, m1, c0)
 ```
 
 `:VerifpalDiagram!` gives verifpal's mermaid `sequenceDiagram` source instead.
